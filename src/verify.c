@@ -131,7 +131,7 @@ NOEXPORT int crl_init(SERVICE_OPTIONS *section) {
     return 0; /* OK */
 }
 
-NOEXPORT int load_file_lookup(X509_STORE *store, char *name) {
+NOEXPORT int load_file_lookup(X509_STORE *store, char *crl_dirname) {
     X509_LOOKUP *lookup;
 
     lookup=X509_STORE_add_lookup(store, X509_LOOKUP_file());
@@ -139,16 +139,16 @@ NOEXPORT int load_file_lookup(X509_STORE *store, char *name) {
         sslerror("X509_STORE_add_lookup(X509_LOOKUP_file)");
         return 1; /* FAILED */
     }
-    if(!X509_load_crl_file(lookup, name, X509_FILETYPE_PEM)) {
-        s_log(LOG_ERR, "Failed to load %s revocation lookup file", name);
+    if(!X509_load_crl_file(lookup, crl_dirname, X509_FILETYPE_PEM)) {
+        s_log(LOG_ERR, "Failed to load %s revocation lookup file", crl_dirname);
         sslerror("X509_load_crl_file");
         return 1; /* FAILED */
     }
-    s_log(LOG_DEBUG, "Loaded %s revocation lookup file", name);
+    s_log(LOG_DEBUG, "Loaded %s revocation lookup file", crl_dirname);
     return 0; /* OK */
 }
 
-NOEXPORT int add_dir_lookup(X509_STORE *store, char *name) {
+NOEXPORT int add_dir_lookup(X509_STORE *store, char *crl_dirname) {
     X509_LOOKUP *lookup;
 
     lookup=X509_STORE_add_lookup(store, X509_LOOKUP_hash_dir());
@@ -156,12 +156,12 @@ NOEXPORT int add_dir_lookup(X509_STORE *store, char *name) {
         sslerror("X509_STORE_add_lookup(X509_LOOKUP_hash_dir)");
         return 1; /* FAILED */
     }
-    if(!X509_LOOKUP_add_dir(lookup, name, X509_FILETYPE_PEM)) {
-        s_log(LOG_ERR, "Failed to add %s revocation lookup directory", name);
+    if(!X509_LOOKUP_add_dir(lookup, crl_dirname, X509_FILETYPE_PEM)) {
+        s_log(LOG_ERR, "Failed to add %s revocation lookup directory", crl_dirname);
         sslerror("X509_LOOKUP_add_dir");
         return 1; /* FAILED */
     }
-    s_log(LOG_DEBUG, "Added %s revocation lookup directory", name);
+    s_log(LOG_DEBUG, "Added %s revocation lookup directory", crl_dirname);
     return 0; /* OK */
 }
 
@@ -205,6 +205,14 @@ NOEXPORT int verify_callback(int preverify_ok, X509_STORE_CTX *callback_ctx) {
     SSL *ssl;
     CLI *c;
 
+    // Note that X509_STORE_CTX *callback_ctx is one time use.
+    // The X509_STORE represents more or less your global certificate 
+    // validation setup, where you store the intermediate certificates and CRLs. 
+    // The store can be used multiple times, 
+    // whereas you set up a X509_STORE_CTX just to perform one validation, 
+    // after that you discard/free it. 
+    // Think of the X509_STORE as your configuration and the 
+    // X509_STORE_CTX as a stateful one-shot object.
     /* retrieve application specific data */
     ssl=X509_STORE_CTX_get_ex_data(callback_ctx,
         SSL_get_ex_data_X509_STORE_CTX_idx());

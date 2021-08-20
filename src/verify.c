@@ -213,15 +213,19 @@ NOEXPORT int verify_callback(int preverify_ok, X509_STORE_CTX *callback_ctx) {
     // after that you discard/free it. 
     // Think of the X509_STORE as your configuration and the 
     // X509_STORE_CTX as a stateful one-shot object.
+
     /* retrieve application specific data */
     ssl=X509_STORE_CTX_get_ex_data(callback_ctx,
         SSL_get_ex_data_X509_STORE_CTX_idx());
     c=SSL_get_ex_data(ssl, index_ssl_cli);
 
+    // If we dont want to verify cert chain or peer cert.
     if(!c->opt->option.verify_chain && !c->opt->option.verify_peer) {
         s_log(LOG_INFO, "Certificate verification disabled");
         return 1; /* accept */
     }
+
+    // verify cert chain.
     if(verify_checks(c, preverify_ok, callback_ctx))
         return 1; /* accept */
     if(c->opt->option.connect_before_ssl)
@@ -254,6 +258,7 @@ NOEXPORT int verify_checks(CLI *c,
 
     s_log(LOG_DEBUG, "Verification started at depth=%d: %s", depth, subject);
 
+    // normal cert check before calling any authority.
     if(!cert_check(c, callback_ctx, preverify_ok)) {
         s_log(LOG_WARNING, "Rejected by CERT at depth=%d: %s", depth, subject);
         str_free(subject);
@@ -278,6 +283,7 @@ NOEXPORT int verify_checks(CLI *c,
 
 NOEXPORT int cert_check(CLI *c, X509_STORE_CTX *callback_ctx,
         int preverify_ok) {
+    // how come we only check ERR message? where the actualy chek happen?
     int err=X509_STORE_CTX_get_error(callback_ctx);
     int depth=X509_STORE_CTX_get_error_depth(callback_ctx);
 

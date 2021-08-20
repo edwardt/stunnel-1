@@ -96,6 +96,13 @@ int ssl_init(void) { /* init TLS before parsing configuration file */
     SSL_load_error_strings();
     SSL_library_init();
 #endif
+    // Note that each SSL session will have its own data
+    // the types of data stored will probably be the same (or mostly the same)
+    // for all the SSL sessions in the process. So the indexes are allocated globally; 
+    // once you get an index, you can use that index 
+    // to store your data in *any* SSL session. 
+    // Usually get_ex_new_index() is called during startup 
+    // and the index is stored in a variable that is private to the code that is using it.
     index_ssl_cli=SSL_get_ex_new_index(0,
         "CLI pointer", NULL, NULL, NULL);
     index_ssl_ctx_opt=SSL_CTX_get_ex_new_index(0,

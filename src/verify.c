@@ -284,6 +284,7 @@ NOEXPORT int verify_checks(CLI *c,
 NOEXPORT int cert_check(CLI *c, X509_STORE_CTX *callback_ctx,
         int preverify_ok) {
     // how come we only check ERR message? where the actualy chek happen?
+    // these are preverificaton not the real cert check
     int err=X509_STORE_CTX_get_error(callback_ctx);
     int depth=X509_STORE_CTX_get_error_depth(callback_ctx);
 
@@ -303,6 +304,7 @@ NOEXPORT int cert_check(CLI *c, X509_STORE_CTX *callback_ctx,
             X509_verify_cert_error_string(err));
     }
 
+    // for leaf cert.
     if(depth==0) { /* additional peer certificate checks */
 #if OPENSSL_VERSION_NUMBER>=0x10002000L
         if(!cert_check_subject(c, callback_ctx))
@@ -361,7 +363,7 @@ NOEXPORT int cert_check_local(X509_STORE_CTX *callback_ctx) {
     X509_NAME *subject;
     STACK_OF(X509) *sk;
     int i;
-
+    // leaf cert
     cert=X509_STORE_CTX_get_current_cert(callback_ctx);
     subject=X509_get_subject_name(cert);
 

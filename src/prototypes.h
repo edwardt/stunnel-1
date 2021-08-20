@@ -426,7 +426,7 @@ typedef enum {
 typedef struct client_data_struct {
     jmp_buf *exception_pointer;
 
-    SSL *ssl;                                              /* TLS connection */
+    SSL *ssl;                                              /* openssl TLS connection */
     SERVICE_OPTIONS *opt;
     TLS_DATA *tls;
 
